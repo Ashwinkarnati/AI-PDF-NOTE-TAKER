@@ -32,3 +32,23 @@ export const ingest = action({
     return "Completed";
   },
 });
+
+export const search = action({
+  args: {
+    query: v.string(),
+    fileId:v.string()
+  },
+  handler: async (ctx, args) => {
+    const vectorStore = new ConvexVectorStore(
+      new GoogleGenerativeAIEmbeddings({
+      apiKey: "AIzaSyAWWJhjVcUl1rMOlq8clLSCf_AYd3ROutk", // Replace with a secure method to handle API keys
+      model: "text-embedding-004",
+      taskType: TaskType.RETRIEVAL_DOCUMENT,
+      title: "Document title",
+    }), { ctx });
+
+    const resultOne = (await vectorStore.similaritySearch(args.query, 4)).filter(q=>q.metadata.fileId==args.fileId);
+    console.log(resultOne);
+    return JSON.stringify(resultOne);
+  },
+});

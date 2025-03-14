@@ -1,12 +1,14 @@
-import React from 'react'
-
-const PdfViewer = ({fileUrl}) => {
-    console.log(fileUrl)
+// PdfViewer Component
+const PdfViewer = ({ fileUrl }) => {
+  console.log(fileUrl);
   return (
-    <div>
-      <iframe src={fileUrl+"#toolbar=0"} className='h-[89vh] w-[100%]'/>
+    <div className="h-full w-full">
+      <iframe
+        src={`${fileUrl}#toolbar=0`}
+        className="h-[calc(100%-16px)] w-full border-none"
+      />
     </div>
-  )
-}
+  );
+};
 
-export default PdfViewer
+export default PdfViewer;

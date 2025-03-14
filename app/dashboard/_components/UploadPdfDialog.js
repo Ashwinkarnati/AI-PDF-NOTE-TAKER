@@ -55,7 +55,6 @@ const UploadPdfDialog = ({ children }) => {
     })
     //API Call to Fetch PDF Process Data
     const apiresp = await axios.get('/api/pdf-loader?pdfUrl='+fileUrl);
-    console.log(apiresp.data.result);
     await embeddDocument({
       splitText:apiresp.data.result,
       fileId:fileId
