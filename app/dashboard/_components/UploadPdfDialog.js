@@ -61,6 +61,8 @@ const UploadPdfDialog = ({ children }) => {
     });
     setLoading(false);
     setOpen(false);
+
+    toast('File is Ready...')
   };
   return (
     <Dialog open={open}>

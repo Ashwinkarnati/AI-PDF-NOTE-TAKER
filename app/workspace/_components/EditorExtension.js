@@ -1,4 +1,4 @@
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useParams } from "next/navigation";
 import { EditorContent, useEditor } from "@tiptap/react";
 import {
@@ -24,11 +24,13 @@ import { api } from "@/convex/_generated/api";
 import { StarterKit } from "@tiptap/starter-kit";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { Highlight } from "@tiptap/extension-highlight";
+import { useUser } from "@clerk/nextjs";
 
 const EditorExtension = ({ editor }) => {
   const { fileId } = useParams();
   const searchAI = useAction(api.myAction.search);
-
+  const saveNotes = useMutation(api.notes.AddNotes);
+  const {user} = useUser();
   const onAiClick = async () => {
     toast("AI is getting your answer...");
     const selectedText = editor.state.doc.textBetween(
@@ -48,7 +50,7 @@ const EditorExtension = ({ editor }) => {
         unFormattedAnswer = unFormattedAnswer + item.pageContent;
       });
 
-    const PROMPT = `For the question: "${selectedText}", provide an appropriate answer in HTML format using the given content: "${unFormattedAnswer}". Ensure the answer is well-structured and formatted correctly in HTML. If the answer is not available in the provided PDF, search for the answer externally and return it in HTML format. Additionally, clearly mention that the answer was not available in the PDF. Do not include the question itself and Don't add Any heading`;
+    const PROMPT = `For the question: "${selectedText}", provide an appropriate answer in HTML format using the given content: "${unFormattedAnswer}". Ensure the answer is well-structured and formatted correctly in HTML. If the answer is not available in the provided PDF, search for the answer externally and return it in HTML format. Additionally, clearly mention that the answer was not available in the PDF. Do not include the question itself and Don't add Any heading.Underline or Bold or italic or Highlight the text which is very important based on the question.`;
 
     const AiModelResult = await chatSession.sendMessage(PROMPT);
     const FinalAns = AiModelResult.response
@@ -61,6 +63,11 @@ const EditorExtension = ({ editor }) => {
     editor.commands.setContent(
       AllText + '<p><strong> Answer: </strong>' + FinalAns + "</p>"
     );
+    saveNotes({
+      notes:editor.getHTML(),
+      fileId:fileId,
+      createdBy:user?.primaryEmailAddress?.emailAddress
+    })
   };
 
   return (
