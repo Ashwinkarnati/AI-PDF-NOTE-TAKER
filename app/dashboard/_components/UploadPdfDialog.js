@@ -11,38 +11,33 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAction, useMutation } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Loader2 } from "lucide-react"; // Corrected import
 import { v4 as uuidv4 } from "uuid"; // Corrected import
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
 
 const UploadPdfDialog = ({ children }) => {
+  const { user } = useUser();
+  const router = useRouter();
   const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
   const AddFileEntry = useMutation(api.fileStorage.AddFileEntryToDb);
   const getFileUrl = useMutation(api.fileStorage.getFileUrl);
   const embeddDocument = useAction(api.myAction.ingest);
-  const { user } = useUser();
+  const incrementUploadCount = useMutation(api.fileStorage.incrementUploadCount);
+  const getUploadCount = useQuery(api.fileStorage.getUploadCount, {
+    userEmail: user?.primaryEmailAddress?.emailAddress,
+  });
+
+  
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(0); // Track the number of uploaded files
-
-  // Load the count from local storage on component mount
-  useEffect(() => {
-    const savedCount = localStorage.getItem("uploadCount");
-    if (savedCount) {
-      setCount(parseInt(savedCount, 10));
-    }
-  }, []);
-
-  // Save the count to local storage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("uploadCount", count.toString());
-  }, [count]);
 
   const OnFileSelect = (event) => {
     setFile(event.target.files[0]);
@@ -59,7 +54,7 @@ const UploadPdfDialog = ({ children }) => {
       return;
     }
 
-    if (count >= 5) {
+    if (getUploadCount >= 5) {
       toast.error("You have reached the maximum upload limit of 5 files.");
       return;
     }
@@ -67,15 +62,22 @@ const UploadPdfDialog = ({ children }) => {
     setLoading(true);
 
     try {
+      // Step 1: Generate an upload URL
       const postUrl = await generateUploadUrl();
+
+      // Step 2: Upload the file to Convex storage
       const result = await fetch(postUrl, {
         method: "POST",
         headers: { "Content-Type": file?.type },
         body: file,
       });
       const { storageId } = await result.json();
-      const fileId = uuidv4(); // Corrected UUID generation
+
+      // Step 3: Get the file URL
       const fileUrl = await getFileUrl({ storageId });
+
+      // Step 4: Store file metadata in the database
+      const fileId = uuidv4();
       await AddFileEntry({
         fileId,
         storageId,
@@ -84,14 +86,20 @@ const UploadPdfDialog = ({ children }) => {
         createdBy: user?.primaryEmailAddress?.emailAddress,
       });
 
+      // Step 5: Embed the document (optional)
       const apiresp = await axios.get("/api/pdf-loader?pdfUrl=" + fileUrl);
       await embeddDocument({
         splitText: apiresp.data.result,
         fileId,
       });
 
-      setCount((prevCount) => prevCount + 1); // Increment the upload count
+      // Step 6: Increment the upload count
+      await incrementUploadCount({
+        userEmail: user?.primaryEmailAddress?.emailAddress,
+      });
+
       toast.success("File uploaded successfully!");
+      router.push(`/workspace/${fileId}`)
     } catch (error) {
       console.error("Error uploading file:", error);
       toast.error("An error occurred while uploading the file.");
@@ -105,8 +113,8 @@ const UploadPdfDialog = ({ children }) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          className={`cursor-pointer ${count >= 5 ? "cursor-not-allowed opacity-50" : ""}`}
-          disabled={count >= 5} // Disable the button if count >= 5
+          className={`cursor-pointer ${getUploadCount >= 5 ? "cursor-not-allowed opacity-50" : ""}`}
+          disabled={getUploadCount >= 5} // Disable the button if count >= 5
           onClick={() => setOpen(true)}
         >
           + Upload PDF File
@@ -159,7 +167,7 @@ const UploadPdfDialog = ({ children }) => {
           </Button>
           <Button
             onClick={OnUpload}
-            disabled={loading || count >= 5} // Disable the button if loading or count >= 5
+            disabled={loading || getUploadCount >= 5} // Disable the button if loading or count >= 5
             className="bg-green-600 text-white hover:text-black cursor-pointer hover:bg-white w-[25%]"
           >
             {loading ? <Loader2 className="animate-spin" /> : "Upload"}
