@@ -30,7 +30,8 @@ const EditorExtension = ({ editor }) => {
   const { fileId } = useParams();
   const searchAI = useAction(api.myAction.search);
   const saveNotes = useMutation(api.notes.AddNotes);
-  const {user} = useUser();
+  const { user } = useUser();
+
   const onAiClick = async () => {
     toast("AI is getting your answer...");
     const selectedText = editor.state.doc.textBetween(
@@ -64,10 +65,10 @@ const EditorExtension = ({ editor }) => {
       AllText + '<p><strong> Answer: </strong>' + FinalAns + "</p>"
     );
     saveNotes({
-      notes:editor.getHTML(),
-      fileId:fileId,
-      createdBy:user?.primaryEmailAddress?.emailAddress
-    })
+      notes: editor.getHTML(),
+      fileId: fileId,
+      createdBy: user?.primaryEmailAddress?.emailAddress,
+    });
   };
 
   return (
@@ -78,31 +79,31 @@ const EditorExtension = ({ editor }) => {
           {/* Text Formatting Buttons */}
           <button
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={editor.isActive("bold") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("bold") ? "text-blue-900" : ""}`}
           >
             <Bold />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={editor.isActive("italic") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("italic") ? "text-blue-900" : ""}`}
           >
             <Italic />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={editor.isActive("underline") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("underline") ? "text-blue-900" : ""}`}
           >
             <UnderlineIcon />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={editor.isActive("strike") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("strike") ? "text-blue-900" : ""}`}
           >
             <Strikethrough />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleHighlight().run()}
-            className={editor.isActive("highlight") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("highlight") ? "text-blue-900" : ""}`}
           >
             <Highlighter />
           </button>
@@ -110,19 +111,19 @@ const EditorExtension = ({ editor }) => {
           {/* Text Alignment Buttons */}
           <button
             onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            className={editor.isActive({ textAlign: "left" }) ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive({ textAlign: "left" }) ? "text-blue-900" : ""}`}
           >
             <AlignLeft />
           </button>
           <button
             onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            className={editor.isActive({ textAlign: "center" }) ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive({ textAlign: "center" }) ? "text-blue-900" : ""}`}
           >
             <AlignCenter />
           </button>
           <button
             onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            className={editor.isActive({ textAlign: "right" }) ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive({ textAlign: "right" }) ? "text-blue-900" : ""}`}
           >
             <AlignRight />
           </button>
@@ -130,13 +131,13 @@ const EditorExtension = ({ editor }) => {
           {/* List Buttons */}
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={editor.isActive("bulletList") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("bulletList") ? "text-blue-900" : ""}`}
           >
             <List />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={editor.isActive("orderedList") ? "text-blue-900" : ""}
+            className={`cursor-pointer ${editor.isActive("orderedList") ? "text-blue-900" : ""}`}
           >
             <ListOrdered />
           </button>
@@ -145,12 +146,14 @@ const EditorExtension = ({ editor }) => {
           <button
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
+            className="cursor-pointer"
           >
             <Undo />
           </button>
           <button
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
+            className="cursor-pointer"
           >
             <Redo />
           </button>
@@ -158,7 +161,7 @@ const EditorExtension = ({ editor }) => {
           {/* AI Button */}
           <button
             onClick={() => onAiClick()}
-            className="ai-button hover:text-blue-900"
+            className="cursor-pointer ai-button hover:text-blue-900"
           >
             <Sparkles />
           </button>

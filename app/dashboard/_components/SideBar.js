@@ -13,6 +13,7 @@ const SideBar = () => {
 
   return (
     <div className="shadow-lg h-screen mt-3 p-5">
+      <Link href={'/dashboard'}>
       <Image
         src={"/logo.svg"}
         alt="logo"
@@ -20,6 +21,7 @@ const SideBar = () => {
         height={90}
         className="rounded-[90%]"
       />
+      </Link>
       <div className="mt-4">
         <UploadPdfDialog>
           <Button className="w-[85%] bg-blue-700 cursor-pointer">+ Upload PDF</Button>

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { useEffect } from "react";
 
 export const generateUploadUrl = mutation({
   handler: async (ctx) => {
@@ -60,3 +61,46 @@ export const GetUserFiles = query({
     return result;
   }
 })
+
+export const deleteFile = mutation({
+  args: {
+    fileId: v.string(), // The ID of the file to delete
+  },
+  handler: async (ctx, args) => {
+    // Find the file record in the database
+    const fileRecord = await ctx.db
+      .query("pdfFiles")
+      .filter((q) => q.eq(q.field("fileId"), args.fileId))
+      .collect();
+
+    if (fileRecord.length === 0) {
+      throw new Error("File not found.");
+    }
+
+    // Delete the file record from the database
+    await ctx.db.delete(fileRecord[0]._id);
+
+    // Delete associated notes
+    const noteRecords = await ctx.db
+      .query("notes")
+      .filter((q) => q.eq(q.field("fileId"), args.fileId))
+      .collect();
+    for (const note of noteRecords) {
+      await ctx.db.delete(note._id);
+    }
+
+    // Delete associated documents
+    const documentRecords = await ctx.db
+      .query("documents")
+      .filter((q) => q.eq(q.field("metadata.fileId"), args.fileId)) // Corrected filter
+      .collect();
+    for (const doc of documentRecords) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // Optionally, delete the file from storage (if needed)
+    await ctx.storage.delete(fileRecord[0].storageId);
+
+    return "File and associated records deleted successfully";
+  },
+});

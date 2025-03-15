@@ -1,8 +1,14 @@
 "use client";
 
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import React from "react";
+import { toast } from "sonner";
 
 const BuyMeCoffee = () => {
+  const onPaymentSuccess = ()=>{
+    toast("Payment Successful!");
+    toast("Thank Your Buying Me A Coffee!!")
+  }
   return (
     <div className="h-[100%] flex flex-col items-center justify-center bg-gray-100 p-5">
       <h1 className="text-2xl font-bold text-gray-800 mb-3">
@@ -61,12 +67,25 @@ const BuyMeCoffee = () => {
                 <span className="text-gray-700"> Small token of appreciation </span>
               </li>
             </ul>
-            <a
-              href="#"
-              className="mt-8 block rounded-full bg-indigo-600 px-12 py-3 text-center text-sm font-medium text-white hover:bg-indigo-700 transition duration-200"
-            >
-              Buy for $1
-            </a>
+            <div className="mt-5">
+            <PayPalButtons 
+            onApprove={()=>onPaymentSuccess()}
+            onCancel={()=>console.log("Payment Cancelled")}
+            createOrder={(data,actions)=>{
+              return actions?.order?.create(
+                {
+                  purchase_units:[
+                    {
+                      amount: {
+                        value:5,
+                        currency_code:'USD'
+                      }
+                    }
+                  ]
+                }
+              )
+            }}/>
+            </div>
           </div>
 
           {/* $5 Donation Card */}
@@ -131,12 +150,25 @@ const BuyMeCoffee = () => {
                 <span className="text-gray-700"> Helps me deliver better work </span>
               </li>
             </ul>
-            <a
-              href="#"
-              className="mt-8 block rounded-full bg-indigo-600 px-12 py-3 text-center text-sm font-medium text-white hover:bg-indigo-700 transition duration-200"
-            >
-              Buy for $5
-            </a>
+            <div className="mt-5">
+            <PayPalButtons 
+            onApprove={()=>onPaymentSuccess()}
+            onCancel={()=>console.log("Payment Cancelled")}
+            createOrder={(data,actions)=>{
+              return actions?.order?.create(
+                {
+                  purchase_units:[
+                    {
+                      amount: {
+                        value:5,
+                        currency_code:'USD'
+                      }
+                    }
+                  ]
+                }
+              )
+            }}/>
+            </div>
           </div>
         </div>
       </div>

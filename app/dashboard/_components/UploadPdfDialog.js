@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,66 +8,109 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Loader2Icon } from "lucide-react";
-import uuid4 from "uuid4";
+import { Loader2 } from "lucide-react"; // Corrected import
+import { v4 as uuidv4 } from "uuid"; // Corrected import
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
+import { toast } from "sonner";
 
 const UploadPdfDialog = ({ children }) => {
   const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
   const AddFileEntry = useMutation(api.fileStorage.AddFileEntryToDb);
   const getFileUrl = useMutation(api.fileStorage.getFileUrl);
   const embeddDocument = useAction(api.myAction.ingest);
-  const {user} = useUser();
-  const [fileName,setFileName]= useState();
-  const [file, setFile] = useState();
+  const { user } = useUser();
+  const [fileName, setFileName] = useState("");
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [open,setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(0); // Track the number of uploaded files
+
+  // Load the count from local storage on component mount
+  useEffect(() => {
+    const savedCount = localStorage.getItem("uploadCount");
+    if (savedCount) {
+      setCount(parseInt(savedCount, 10));
+    }
+  }, []);
+
+  // Save the count to local storage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("uploadCount", count.toString());
+  }, [count]);
+
   const OnFileSelect = (event) => {
     setFile(event.target.files[0]);
   };
-  const OnUpload = async () => {
-    setLoading(true);
-    // Step 1: Get a short-lived upload URL
-    const postUrl = await generateUploadUrl();
-    // Step 2: POST the file to the URL
-    const result = await fetch(postUrl, {
-      method: "POST",
-      headers: { "Content-Type": file?.type },
-      body: file,
-    });
-    const { storageId } = await result.json();
-    const fileId = uuid4();
-    const fileUrl = await getFileUrl({storageId:storageId})
-    // Step 3: Save the newly allocated storage id to the database
-    const resp = await AddFileEntry({
-        fileId:fileId,
-        storageId:storageId,
-        fileName:fileName??'Untitled File',
-        fileUrl:fileUrl,
-        createdBy:user?.primaryEmailAddress?.emailAddress
-    })
-    //API Call to Fetch PDF Process Data
-    const apiresp = await axios.get('/api/pdf-loader?pdfUrl='+fileUrl);
-    await embeddDocument({
-      splitText:apiresp.data.result,
-      fileId:fileId
-    });
-    setLoading(false);
-    setOpen(false);
 
-    toast('File is Ready...')
+  const OnUpload = async () => {
+    if (!file) {
+      toast.error("Please select a file to upload.");
+      return;
+    }
+
+    if (!fileName) {
+      toast.error("Please provide a file name.");
+      return;
+    }
+
+    if (count >= 5) {
+      toast.error("You have reached the maximum upload limit of 5 files.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file?.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+      const fileId = uuidv4(); // Corrected UUID generation
+      const fileUrl = await getFileUrl({ storageId });
+      await AddFileEntry({
+        fileId,
+        storageId,
+        fileName: fileName ?? "Untitled File",
+        fileUrl,
+        createdBy: user?.primaryEmailAddress?.emailAddress,
+      });
+
+      const apiresp = await axios.get("/api/pdf-loader?pdfUrl=" + fileUrl);
+      await embeddDocument({
+        splitText: apiresp.data.result,
+        fileId,
+      });
+
+      setCount((prevCount) => prevCount + 1); // Increment the upload count
+      toast.success("File uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("An error occurred while uploading the file.");
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
   };
+
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button onClick={()=>setOpen(true)}>+ Upload PDF File</Button>
+        <Button
+          className={`cursor-pointer ${count >= 5 ? "cursor-not-allowed opacity-50" : ""}`}
+          disabled={count >= 5} // Disable the button if count >= 5
+          onClick={() => setOpen(true)}
+        >
+          + Upload PDF File
+        </Button>
       </DialogTrigger>
       <DialogContent className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full">
         <DialogHeader>
@@ -88,7 +131,7 @@ const UploadPdfDialog = ({ children }) => {
               type="file"
               className="border-2 border-blue-500 rounded-lg p-2 w-[60%] text-center cursor-pointer"
               accept="application/pdf"
-              onChange={(event) => OnFileSelect(event)}
+              onChange={OnFileSelect}
             />
           </div>
 
@@ -99,26 +142,27 @@ const UploadPdfDialog = ({ children }) => {
             <Input
               placeholder="File Name"
               className="border border-gray-300 rounded-lg p-3 w-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onChange={(e)=>setFileName(e.target.value)}
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
             />
           </div>
         </div>
+
         <DialogFooter className="sm:justify-between">
-          <DialogClose asChild>
-            <Button
-              type="button"
-              variant="secondary"
-              className=" bg-red-600 text-white hover:text-black cursor-pointer w-[25%]"
-            >
-              Close
-            </Button>
-          </DialogClose>
+          <Button
+            type="button"
+            variant="secondary"
+            className="bg-red-600 text-white hover:text-black cursor-pointer w-[25%]"
+            onClick={() => setOpen(false)}
+          >
+            Close
+          </Button>
           <Button
             onClick={OnUpload}
-            disabled = {loading}
+            disabled={loading || count >= 5} // Disable the button if loading or count >= 5
             className="bg-green-600 text-white hover:text-black cursor-pointer hover:bg-white w-[25%]"
           >
-            {loading ? <Loader2Icon className="animate-spin" /> : "Upload"}
+            {loading ? <Loader2 className="animate-spin" /> : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>
