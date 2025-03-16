@@ -1,6 +1,5 @@
 // PdfViewer Component
 const PdfViewer = ({ fileUrl }) => {
-  console.log(fileUrl);
   return (
     <div className="h-full w-full">
       <iframe

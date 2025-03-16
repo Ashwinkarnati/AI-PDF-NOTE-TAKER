@@ -50,7 +50,6 @@ export const search = action({
     }), { ctx });
 
     const resultOne = (await vectorStore.similaritySearch(args.query, 4)).filter(q=>q.metadata.fileId==args.fileId);
-    console.log(resultOne);
     return JSON.stringify(resultOne);
   },
 });

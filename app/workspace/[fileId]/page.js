@@ -24,11 +24,6 @@ const Workspace = () => {
     }
   };
 
-  useEffect(() => {
-    if (fileInfo) {
-      console.log("File Info:", fileInfo);
-    }
-  }, [fileInfo]);
 
   if (!fileInfo) {
     return (
