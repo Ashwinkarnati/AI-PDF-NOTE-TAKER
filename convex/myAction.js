@@ -3,7 +3,6 @@ import { action } from "./_generated/server.js";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { TaskType } from "@google/generative-ai";
 import { v } from "convex/values";
-require('dotenv').config();
 
 // Use `apiKey` in your application wherever needed.
 
@@ -24,7 +23,7 @@ export const ingest = action({
       args.splitText, // Text data
       metadata,       // Metadata
       new GoogleGenerativeAIEmbeddings({
-        apiKey: process.env.GEMINI_API_KEY, // Replace with a secure method to handle API keys
+        apiKey: "AIzaSyAcGKGbk8IcUhJfjbhBP225nudiWwtwLm8", // Replace with a secure method to handle API keys
         model: "text-embedding-004",
         taskType: TaskType.RETRIEVAL_DOCUMENT,
         title: "Document title",
@@ -44,7 +43,7 @@ export const search = action({
   handler: async (ctx, args) => {
     const vectorStore = new ConvexVectorStore(
       new GoogleGenerativeAIEmbeddings({
-      apiKey: process.env.GEMINI_API_KEY, // Replace with a secure method to handle API keys
+      apiKey: "AIzaSyAcGKGbk8IcUhJfjbhBP225nudiWwtwLm8", // Replace with a secure method to handle API keys
       model: "text-embedding-004",
       taskType: TaskType.RETRIEVAL_DOCUMENT,
       title: "Document title",
