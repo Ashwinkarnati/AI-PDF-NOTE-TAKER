@@ -105,7 +105,6 @@
    - Upload up to 5 PDFs at a time.
    - Delete existing PDFs to make space for new uploads.
 
-
 ---
 
 ## Contributing
@@ -145,4 +144,3 @@ For questions or feedback, please reach out to:
 ---
 
 Enjoy using **AI-PDF-Note-Taker**! 🚀
-
